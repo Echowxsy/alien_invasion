@@ -12,7 +12,7 @@ class Settings():
         self.ship_limit = 3  # 飞船数量
 
         # bullet 子弹
-        self.bullet_width = 300   # 子弹宽度
+        self.bullet_width = 3   # 子弹宽度
         self.bullet_height = 10  # 子弹长度
         self.bullet_color = 60, 60, 60  # 子弹颜色
         self.bullets_allowed = 3  # 同时存在的子弹数目

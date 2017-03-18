@@ -5,7 +5,8 @@ from bullet import Bullet
 from alien import Alien
 
 
-def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets):
+def check_events(ai_settings, screen, stats, sb, play_button, ship, aliens,
+                 bullets):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             sys.exit()
@@ -16,16 +17,29 @@ def check_events(ai_settings, screen, stats, play_button, ship, aliens, bullets)
             check_keyup_events(event, ship)
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = pygame.mouse.get_pos()
-            check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y)
+            check_play_button(ai_settings, screen, stats, sb, play_button,
+                              ship, aliens, bullets, mouse_x, mouse_y)
 
 
-def check_play_button(ai_settings, screen, stats, play_button, ship, aliens, bullets, mouse_x, mouse_y):
+def check_play_button(ai_settings, screen, stats, sb, play_button, ship,
+                      aliens, bullets, mouse_x, mouse_y):
     button_clicked = play_button.rect.collidepoint(mouse_x, mouse_y)
     if button_clicked and not stats.game_active:
         ai_settings.initialize_dynamic_settings()
+
+        # 重置统计信息
         stats.reset_stats()
+
+        # 游戏状态
         stats.game_active = True
         pygame.mouse.set_visible(False)
+
+        # 重置积分
+        sb.prep_score()
+        sb.prep_high_score()
+        sb.prep_level()
+
+        # 清空外星人和子弹
         aliens.empty()
         bullets.empty()
 
@@ -59,7 +73,8 @@ def check_keyup_events(event, ship):
         ship.moving_down = False
 
 
-def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets, play_button):
+def update_screen(ai_settings, screen, stats, sb, ship, aliens, bullets,
+                  play_button):
     screen.fill(ai_settings.bg_color)
     for bullet in bullets.sprites():
         bullet.draw_bullet()
@@ -77,20 +92,26 @@ def update_bullets(ai_settings, screen, stats, sb, ship, aliens, bullets):
         if bullet.rect.bottom <= 0:
             bullets.remove(bullet)
     # print(len(bullets))
-    check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets)
+    check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens,
+                                  bullets)
 
 
-def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens, bullets):
+def check_bullet_alien_collisions(ai_settings, screen, stats, sb, ship, aliens,
+                                  bullets):
     """检查子弹与飞船是否碰撞"""
     collisions = pygame.sprite.groupcollide(bullets, aliens, True, True)
     if collisions:
         for aliens in collisions.values():
             stats.score += ai_settings.alien_points * len(aliens)
             sb.prep_score()
+        check_high_score(stats, sb)
 
     if len(aliens) == 0:
         bullets.empty()
         ai_settings.increase_speed()
+        stats.level += 1
+        sb.prep_level()
+
         create_fleet(ai_settings, screen, ship, aliens)
 
 
@@ -103,7 +124,8 @@ def fire_bullet(ai_settings, screen, ship, bullets):
 def create_fleet(ai_settings, screen, ship, aliens):
     alien = Alien(ai_settings, screen)
     number_aliens_x = get_number_aliens(ai_settings, alien.rect.width)
-    number_rows = get_number_rows(ai_settings, ship.rect.height, alien.rect.height)
+    number_rows = get_number_rows(ai_settings, ship.rect.height,
+                                  alien.rect.height)
     for row_number in range(number_rows):
         for alien_number in range(number_aliens_x):
             create_alien(ai_settings, screen, aliens, alien_number, row_number)
@@ -125,7 +147,8 @@ def create_alien(ai_settings, screen, aliens, alien_number, row_number):
 
 
 def get_number_rows(ai_settings, ship_height, alien_height):
-    available_space_y = (ai_settings.screen_height - (3 * alien_height) - ship_height)
+    available_space_y = (ai_settings.screen_height -
+                         (3 * alien_height) - ship_height)
     number_rows = int(available_space_y / (2 * alien_height))
     return number_rows
 
@@ -170,3 +193,10 @@ def change_fleet_direction(ai_settings, aliens):
     for alien in aliens.sprites():
         alien.rect.y += ai_settings.fleet_drop_speed
     ai_settings.fleet_direction *= -1
+
+
+def check_high_score(stats, sb):
+    """检查是否生成最高分"""
+    if stats.score > stats.high_score:
+        stats.high_score = stats.score
+        sb.prep_high_score()
