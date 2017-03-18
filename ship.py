@@ -1,9 +1,11 @@
 import pygame
+from pygame.sprite import Sprite
 
 
-class Ship():
+class Ship(Sprite):
     def __init__(self, ai_settings, screen):
         """初始化飞船"""
+        super(Ship, self).__init__()
         self.screen = screen
         self.ai_settings = ai_settings
         # 加载飞机图像
@@ -46,4 +48,4 @@ class Ship():
     def center_ship(self):
         """飞船居中"""
         self.center = self.screen_rect.centerx
-        self.top = self.screen_rect.height-self.rect.height
+        self.top = self.screen_rect.height - self.rect.height
